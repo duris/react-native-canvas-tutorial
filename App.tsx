@@ -13,6 +13,8 @@ const App = () => {
   const { height, width, scale, fontScale } = useWindowDimensions();
   const ref = useRef<Canvas>(null);
 
+  const [isTouching, setIsTouching] = useState(false);
+
   const [headerHeight, setHeaderHeight] = useState(100);
 
   const [boxDimensions, setBoxDimensions] = useState({
@@ -26,6 +28,27 @@ const App = () => {
     w: boxDimensions.width,
     h: boxDimensions.height,
   });
+
+  const touchRange = {
+    x: {
+      leftLimit: rect.x,
+      rightLimit: rect.x + boxDimensions.width,
+    },
+    y: {
+      topLimit: rect.y,
+      bottomLimit: rect.y + boxDimensions.height,
+    },
+  };
+
+  const hasTouched = (touchX: number, touchY: number) => {
+    const result =
+      touchX > touchRange.x.leftLimit &&
+      touchX < touchRange.x.rightLimit &&
+      touchY > touchRange.y.topLimit &&
+      touchY < touchRange.y.bottomLimit;
+
+    return result;
+  };
 
   useEffect(() => {
     const canvas = ref.current as Canvas;
@@ -41,27 +64,39 @@ const App = () => {
 
   return (
     <SafeAreaView className=" bg-black h-full">
-      <TouchableOpacity>
-        <View
-          onTouchStart={(e) => {
-            console.log("touchMove", e.nativeEvent);
+      <View
+        onTouchStart={(e) => {
+          const touchX = e.nativeEvent.locationX;
+          const touchY = e.nativeEvent.locationY;
+          if (hasTouched(touchX, touchY)) {
+            setIsTouching(true);
+          }
+        }}
+        onTouchMove={(e) => {
+          const touchX = e.nativeEvent.locationX;
+          const touchY = e.nativeEvent.locationY;
+
+          if (hasTouched(touchX, touchY) || isTouching) {
             setRect({
               ...rect,
-              x: e.nativeEvent.pageX - boxDimensions.width / 2,
-              y: e.nativeEvent.pageY - boxDimensions.height,
+              x: e.nativeEvent.locationX - boxDimensions.width / 2,
+              y: e.nativeEvent.locationY - boxDimensions.height / 2,
             });
+          }
+        }}
+        onTouchEndCapture={(e) => {
+          setIsTouching(false);
+        }}
+      >
+        <Canvas
+          ref={ref}
+          style={{
+            width: width,
+            height: height,
+            backgroundColor: "black",
           }}
-        >
-          <Canvas
-            ref={ref}
-            style={{
-              width: width,
-              height: height,
-              backgroundColor: "black",
-            }}
-          />
-        </View>
-      </TouchableOpacity>
+        />
+      </View>
     </SafeAreaView>
   );
 };
