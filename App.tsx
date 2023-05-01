@@ -9,7 +9,8 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import Handle from "./components/Handle";
+
+import ResizableCanvas from "./components/ResizableCanvas";
 
 type Touch = {
   x: number;
@@ -83,17 +84,13 @@ const App = () => {
   });
 
   const [layer, setLayer] = useState({
-    coordinates: {
-      x: layerCoordinates.x,
-      y: layerCoordinates.y,
-    },
     topRight: {
-      x: layerCoordinates.x + layerDimensions.width - 10,
-      y: layerCoordinates.y - 10,
+      x: layerCoordinates.x + layerDimensions.width - 15,
+      y: layerCoordinates.y - 5,
     },
     bottomRight: {
-      x: layerCoordinates.x + layerDimensions.width - 10,
-      y: layerCoordinates.y + layerDimensions.height - 10,
+      x: layerCoordinates.x + layerDimensions.width - 15,
+      y: layerCoordinates.y + layerDimensions.height - 15,
     },
   });
 
@@ -110,10 +107,10 @@ const App = () => {
 
   const inTouchRange = (touch: Touch, range: Range) => {
     const result =
-      touch.x > range.leftLimit - 100 &&
-      touch.x < range.rightLimit - 100 &&
-      touch.y > range.topLimit - 100 &&
-      touch.y < range.bottomLimit - 100;
+      touch.x > range.leftLimit &&
+      touch.x < range.rightLimit &&
+      touch.y > range.topLimit &&
+      touch.y < range.bottomLimit;
 
     return result;
   };
@@ -150,12 +147,15 @@ const App = () => {
 
   const handleDrag = (e: GestureResponderEvent) => {
     const topRightHandleRange = {
-      coordinates: { x: layer.topRight.x - 50, y: layer.topRight.y - 50 },
-      dimensions: { width: 200, height: 200 },
+      coordinates: { x: layer.topRight.x, y: layer.topRight.y },
+      dimensions: { width: 100, height: 100 },
     };
     const bottomRightHandleRange = {
-      coordinates: { x: layer.bottomRight.x - 50, y: layer.bottomRight.y - 50 },
-      dimensions: { width: 200, height: 200 },
+      coordinates: {
+        x: layer.bottomRight.x - 50,
+        y: layer.bottomRight.y - 50,
+      },
+      dimensions: { width: 100, height: 100 },
     };
 
     const topRightRange = getTouchRange(topRightHandleRange);
@@ -167,51 +167,93 @@ const App = () => {
     };
 
     if (inTouchRange(touch, topRightRange) || isTouchingArea.topRight) {
-      console.log(touch);
+      // console.log(
+      //   `pageX: ${e.nativeEvent.pageX}, pageY: ${
+      //     e.nativeEvent.pageY
+      //   }, locationX: ${e.nativeEvent.locationX}, locationY: ${
+      //     e.nativeEvent.locationY
+      //   }, bottomRight: ${JSON.stringify(layer.bottomRight)}`
+      // );
       setIsTouchingArea({ ...isTouchingArea, topRight: true });
       const toMoveX = e.nativeEvent.pageX - layerCoordinates.x;
       const toMoveY = e.nativeEvent.pageY - layerCoordinates.y;
-      if (toMoveX > 0 && toMoveY > 0) {
-        // setLayerDimensions({
-        //   ...layerDimensions,
-        //   width: toMoveX,
-        //   height: toMoveY,
-        // });
-        // setLayerCooridinates({
-        //   ...layerCoordinates,
-        // });
+      if (toMoveY < 0) {
+        console.log("moviing up: " + toMoveY);
+
+        setLayerCooridinates({
+          ...layerCoordinates,
+          y: e.nativeEvent.pageY,
+        });
+        setLayerDimensions({
+          ...layerDimensions,
+          width: toMoveX,
+          // height: layerDimensions.height + e.nativeEvent.locationY,
+        });
         setLayer({
           ...layer,
           topRight: {
-            x: e.nativeEvent.pageX - 10,
-            y: e.nativeEvent.pageY - 10,
+            x: e.nativeEvent.pageX - 15,
+            y: e.nativeEvent.pageY - 5,
+          },
+          bottomRight: {
+            x: e.nativeEvent.pageX - 15,
+            y: layerCoordinates.y + layerDimensions.height - 15,
+          },
+        });
+      } else if (toMoveY > 0) {
+        console.log("moving down: " + toMoveY);
+
+        console.log(
+          `touchX: ${e.nativeEvent.pageX}, touchY: ${
+            e.nativeEvent.pageY
+          }, layerDimensions: ${JSON.stringify(layerDimensions)}`
+        );
+        console.log("layerStartY: " + layerCoordinates.y);
+        console.log("layerStartX: " + layerCoordinates.x);
+        console.log("bottomRight: " + JSON.stringify(layer.bottomRight));
+        setLayerDimensions({
+          ...layerDimensions,
+          width: toMoveX,
+          // height: ,
+        });
+        setLayerCooridinates({
+          ...layerCoordinates,
+          y: e.nativeEvent.pageY,
+        });
+
+        setLayer({
+          ...layer,
+          topRight: {
+            x: e.nativeEvent.pageX - 15,
+            y: e.nativeEvent.pageY - 5,
+          },
+          bottomRight: {
+            x: e.nativeEvent.pageX - 15,
+            y: layerCoordinates.y + layerDimensions.height - 15,
           },
         });
       }
     }
     if (inTouchRange(touch, bottomRightRange) || isTouchingArea.bottomRight) {
-      console.log(touch);
       setIsTouchingArea({ ...isTouchingArea, bottomRight: true });
       const toMoveX = e.nativeEvent.pageX - layerCoordinates.x;
       const toMoveY = e.nativeEvent.pageY - layerCoordinates.y;
-      if (toMoveX > 0 && toMoveY > 0) {
+      if (toMoveY > 100) {
         setLayerDimensions({
           ...layerDimensions,
           width: toMoveX,
           height: toMoveY,
         });
-        setLayerCooridinates({
-          ...layerCoordinates,
-        });
+
         setLayer({
           ...layer,
           topRight: {
-            x: e.nativeEvent.pageX - 10,
-            y: layerCoordinates.y - 10,
+            x: e.nativeEvent.pageX - 15,
+            y: layerCoordinates.y - 5,
           },
           bottomRight: {
-            x: e.nativeEvent.pageX - 10,
-            y: e.nativeEvent.pageY - 10,
+            x: e.nativeEvent.pageX - 15,
+            y: e.nativeEvent.pageY - 15,
           },
         });
       }
@@ -223,7 +265,7 @@ const App = () => {
       className=" bg-white h-full"
       onTouchMove={(e) => handleDrag(e)}
       onTouchStart={(e) => handleDrag(e)}
-      onTouchEndCapture={(e) => {
+      onTouchEnd={(e) => {
         setIsTouchingArea({
           topRight: false,
           bottomRight: false,
@@ -262,24 +304,72 @@ const App = () => {
         }}
       >
         <View className=" bg-white w-12 abosolute z-20">
-          <View className="relative">
-            <Handle
-              coordinates={{
-                x: layer.topRight.x,
-                y: layer.topRight.y,
-              }}
-            />
-            <Handle
-              coordinates={{
-                x: layer.bottomRight.x,
-                y: layer.bottomRight.y,
-              }}
-            />
+          <View
+            className={layerStyle}
+            style={{ top: layerCoordinates.y, left: layerCoordinates.x }}
+          >
+            <View className="relative">
+              <View
+                style={{
+                  top: -8,
+                  right: -8,
+                  position: "absolute",
+                  height: 20,
+                  width: 20,
+                  backgroundColor: "transparent",
+                  borderColor: "red",
+                  borderRightWidth: 4,
+                  borderTopWidth: 4,
+                  zIndex: 30,
+                  borderTopRightRadius: 3,
+                }}
+              />
+              <View
+                style={{
+                  bottom: -8,
+                  right: -8,
+                  position: "absolute",
+                  height: 20,
+                  width: 20,
+                  backgroundColor: "transparent",
+                  borderColor: "red",
+                  borderRightWidth: 4,
+                  borderBottomWidth: 4,
+                  zIndex: 30,
+                  borderBottomRightRadius: 3,
+                }}
+              />
+              <View
+                style={{
+                  left: -8,
+                  top: -8,
+                  position: "absolute",
+                  height: 20,
+                  width: 20,
+                  backgroundColor: "transparent",
+                  borderColor: "red",
+                  borderLeftWidth: 4,
+                  borderTopWidth: 4,
+                  zIndex: 30,
+                  borderTopLeftRadius: 3,
+                }}
+              />
+              <View
+                style={{
+                  left: -8,
+                  bottom: -8,
+                  position: "absolute",
+                  height: 20,
+                  width: 20,
+                  backgroundColor: "transparent",
+                  borderColor: "red",
+                  borderLeftWidth: 4,
+                  borderBottomWidth: 4,
+                  zIndex: 30,
+                  borderBottomLeftRadius: 3,
+                }}
+              />
 
-            <View
-              className={layerStyle}
-              style={{ top: layer.coordinates.y, left: layer.coordinates.x }}
-            >
               <Canvas
                 ref={ref2}
                 style={{
@@ -291,6 +381,7 @@ const App = () => {
             </View>
           </View>
         </View>
+
         <View className=" absolute top-0">
           <Canvas
             ref={ref}
